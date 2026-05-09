@@ -1,0 +1,1 @@
+from .scrapeModel import ScrapedProduct

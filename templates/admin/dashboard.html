@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartify Admin | Dashboard</title>
+    <link rel="stylesheet" href="/static/admin_dashboard/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        if (!localStorage.getItem('auth_token')) {
+            window.location.href = '/admin/login/';
+        }
+    </script>
+    <style>
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* ── Modal base ── */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 540px;
+            border: 1px solid var(--border);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .close-modal {
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.7rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-color);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* ── KYC detail card ── */
+        .kyc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .kyc-field label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .kyc-field p {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        #kyc-logo-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            display: none;
+        }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.85rem 1.4rem;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            background: #22c55e22;
+            border: 1px solid #22c55e55;
+            color: #22c55e;
+        }
+
+        .toast-error {
+            background: #ef444422;
+            border: 1px solid #ef444455;
+            color: #ef4444;
+        }
+
+        /* ── Pagination Fix ── */
+        .pagination-container {
+            padding: 1.8rem 0 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: transparent;
+        }
+
+        .pagination-info {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            font-weight: 500;
+            padding: 0.35rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            letter-spacing: 0.02em;
+        }
+
+        .pagination-info span {
+            font-weight: 700;
+            color: #f8fafc;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+        }
+
+        .page-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 36px !important;
+            height: 36px !important;
+            min-width: unset !important;
+            border-radius: 50% !important;
+            border: none !important;
+            background: transparent !important;
+            color: #94a3b8 !important;
+            cursor: pointer !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            transition: all 0.2s ease !important;
+            outline: none !important;
+            font-family: inherit !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        .page-btn svg {
+            width: 14px !important;
+            height: 14px !important;
+            stroke: currentColor !important;
+            fill: none !important;
+            stroke-width: 2.5 !important;
+            stroke-linecap: round !important;
+            stroke-linejoin: round !important;
+            display: block !important;
+            pointer-events: none !important;
+        }
+
+        .page-btn:hover:not(:disabled):not(.active) {
+            background: rgba(255, 255, 255, 0.07) !important;
+            color: #f8fafc !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .page-btn.active {
+            background: #6366f1 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+            border: none !important;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3 !important;
+            cursor: not-allowed !important;
+        }
+
+        .pagination-ellipsis {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 36px !important;
+            height: 36px !important;
+            color: #94a3b8 !important;
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            opacity: 0.5 !important;
+            user-select: none !important;
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        /* ── Subcategory Tags ── */
+        .subcat-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.5rem;
+            background: rgba(99, 102, 241, 0.1);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin: 0.15rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .subcat-tag:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-1px);
+        }
+    </style>
+    <script>
+        (function () {
+            const token = localStorage.getItem('auth_token');
+            if (!token) window.location.href = '/admin/login/';
+        })();
+    </script>
+</head>
+
+<body>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-container">
+                <i data-lucide="shield-check" style="color:white; width:22px; height:22px;"></i>
+            </div>
+            <span class="brand-name">Cartify Admin</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#" class="nav-item active" data-view="dashboard">
+                <i data-lucide="layout-dashboard"></i> <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-view="kyc">
+                <i data-lucide="user-check"></i> <span>KYC Requests</span>
+            </a>
+            <a href="#" class="nav-item" data-view="vendors">
+                <i data-lucide="store"></i> <span>Vendors</span>
+            </a>
+            <a href="#" class="nav-item" data-view="products">
+                <i data-lucide="package"></i> <span>Products</span>
+            </a>
+            <a href="#" class="nav-item" data-view="customers">
+                <i data-lucide="users"></i> <span>Customers</span>
+            </a>
+            <a href="#" class="nav-item" data-view="guests">
+                <i data-lucide="user-x"></i> <span>Guests</span>
+            </a>
+            <a href="#" class="nav-item" data-view="categories">
+                <i data-lucide="layers"></i> <span>Categories</span>
+            </a>
+            <a href="#" class="nav-item" data-view="analytics">
+                <i data-lucide="bar-chart-3"></i> <span>Analytics</span>
+            </a>
+            <a href="#" class="nav-item" data-view="settings">
+                <i data-lucide="settings"></i> <span>Settings</span>
+            </a>
+            <a href="#" class="nav-item" id="logoutBtn"
+                style="margin-top: auto; color: var(--danger); border-top: 1px solid var(--border); border-radius: 0; padding-top: 1.5rem;">
+                <i data-lucide="log-out"></i> <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header>
+            <div class="header-left">
+                <div style="display:flex; align-items:center; gap:1rem;">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div>
+                        <h1>Dashboard</h1>
+                        <p id="current-date-display" style="color:var(--text-secondary); font-size:0.85rem;"></p>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <div class="user-profile" style="display:flex; gap:0.5rem; align-items:center;">
+                    <button class="btn btn-primary" id="openCreateVendorBtn">
+                        <i data-lucide="plus"></i> <span>Create Vendor</span>
+                    </button>
+                    <button class="btn btn-secondary" id="openAddProductBtn">
+                        <i data-lucide="package-plus"></i> <span>Add Product</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ══════════ DASHBOARD VIEW ══════════ -->
+        <div id="dashboard-view" class="view active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Vendors</div>
+                    <div class="stat-value" id="count-vendors">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Vendors</div>
+                    <div class="stat-value" id="count-active-vendors">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Pending KYC</div>
+                    <div class="stat-value" id="count-pending">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Products</div>
+                    <div class="stat-value" id="count-products">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Customers</div>
+                    <div class="stat-value" id="count-customers">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Guest Users</div>
+                    <div class="stat-value" id="count-guests">0</div>
+                </div>
+            </div>
+
+            <div class="charts-grid"
+                style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;margin-bottom:2.5rem;">
+                <div class="stat-card">
+                    <div class="section-header">
+                        <h3>Vendor Growth</h3>
+                    </div>
+                    <canvas id="vendorGrowthChart"></canvas>
+                </div>
+                <div class="stat-card">
+                    <div class="section-header">
+                        <h3>Product Posts</h3>
+                    </div>
+                    <canvas id="productPostsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>Recent Vendor Activities</h3>
+                    <a href="#" onclick="switchView('vendors')" class="text-accent">View all</a>
+                </div>
+                <div class="table-container">
+                    <table id="recent-vendors-table">
+                        <thead>
+                            <tr>
+                                <th>Brand</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="recent-vendors-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- ══════════ KYC REQUESTS VIEW ══════════ -->
+        <div id="kyc-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>Pending KYC Requests</h3>
+                </div>
+                <div class="table-container">
+                    <table id="pending-kyc-table">
+                        <thead>
+                            <tr>
+                                <th>Brand</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Submitted Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="kyc-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- ══════════ VENDORS VIEW ══════════ -->
+        <div id="vendors-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>All Vendors</h3>
+                </div>
+                <div class="table-container">
+                    <table id="all-vendors-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Brand</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="vendors-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- ══════════ PRODUCTS VIEW ══════════ -->
+        <div id="products-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>All Marketplace Products</h3>
+                </div>
+                <div class="table-container">
+                    <table id="all-products-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Vendor</th>
+                                <th>Price</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="products-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- ══════════ SCRAPED ITEMS VIEW ══════════ -->
+        <div id="scraped-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>Scraped Items</h3>
+                </div>
+                <div class="table-container">
+                    <table id="all-scraped-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Scraped By</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="scraped-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- ══════════ CATEGORIES VIEW ══════════ -->
+        <div id="categories-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>Categories</h3>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <button class="btn btn-primary" id="openCreateCategoryBtn"
+                            style="padding:0.4rem 0.9rem;font-size:0.85rem;">
+                            <i data-lucide="plus"></i> New Category
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="all-categories-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Subcategories</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="categories-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- ══════════ CUSTOMERS VIEW ══════════ -->
+        <div id="customers-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>Registered Customers</h3>
+                </div>
+                <div class="table-container">
+                    <table id="all-customers-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Signup Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="customers-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- ══════════ GUESTS VIEW ══════════ -->
+        <div id="guests-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>Guest Users (Anonymous)</h3>
+                </div>
+                <div class="table-container">
+                    <table id="all-guests-table">
+                        <thead>
+                            <tr>
+                                <th>Device ID</th>
+                                <th>First Visit</th>
+                                <th>Last Active</th>
+                                <th>Favorites</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="guests-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- ══════════ FAVORITES VIEW ══════════ -->
+        <div id="favorites-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>Trending Products (Favorites)</h3>
+                </div>
+                <div class="table-container">
+                    <table id="all-favorites-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Vendor</th>
+                                <th>Favorites</th>
+                                <th>Unique Users</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="favorites-pagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- ══════════ NOTIFICATIONS VIEW ══════════ -->
+        <div id="notifications-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>Send Notifications</h3>
+                </div>
+                <form id="sendNotificationForm" style="max-width: 600px; margin-top: 1rem;">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" name="title" required placeholder="Notification Title">
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea name="message" required rows="4" placeholder="Notification Message..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Audience</label>
+                        <select name="target">
+                            <option value="all">All Users</option>
+                            <option value="customers">Only Customers</option>
+                            <option value="vendors">Only Vendors</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send Notification</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ══════════ ANALYTICS VIEW ══════════ -->
+        <div id="analytics-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>System Reports & Export</h3>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button class="btn btn-primary" onclick="exportReport('vendors')">Export Vendors</button>
+                        <button class="btn btn-primary" onclick="exportReport('products')">Export Products</button>
+                        <button class="btn btn-primary" onclick="exportReport('customers')">Export Customers</button>
+                    </div>
+                </div>
+                <div class="charts-grid"
+                    style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+                    <div class="stat-card" style="grid-column: span 2;">
+                        <div class="section-header">
+                            <h3>User Growth (Monthly)</h3>
+                        </div>
+                        <canvas id="userGrowthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════ SETTINGS VIEW ══════════ -->
+        <div id="settings-view" class="view">
+            <div class="data-section">
+                <div class="section-header">
+                    <h3>System Settings</h3>
+                </div>
+                <div class="settings-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:2rem;margin-top:1rem;">
+                    <!-- Card 1 -->
+                    <div style="background:var(--glass); border:1px solid var(--border); border-radius:12px; padding:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+                        <h4 style="margin-bottom:1.5rem; color:var(--text-primary); border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.8rem; display:flex; align-items:center; gap:0.5rem; font-size:1.1rem;">
+                            <i data-lucide="globe" style="width:20px;height:20px;color:var(--accent-color);"></i>
+                            Platform & Global
+                        </h4>
+                        <form id="systemSettingsForm">
+                            <div class="form-group">
+                                <label>Platform Name</label>
+                                <input type="text" name="platform_name" value="Cartify">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top:0.5rem; width:100%;">Save Platform Settings</button>
+                        </form>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div style="background:var(--glass); border:1px solid var(--border); border-radius:12px; padding:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+                        <h4 style="margin-bottom:1.5rem; color:var(--text-primary); border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.8rem; display:flex; align-items:center; gap:0.5rem; font-size:1.1rem;">
+                            <i data-lucide="message-square" style="width:20px;height:20px;color:var(--accent-color);"></i>
+                            Popup & Engagement
+                        </h4>
+                        <form id="popupSettingsForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Status</label>
+                                    <select name="enabled">
+                                        <option value="true">Enabled</option>
+                                        <option value="false">Disabled</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Delay (Days)</label>
+                                    <input type="number" name="popup_delay_days" value="60">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Message Content</label>
+                                <textarea name="message" rows="3" placeholder="Enter popup message..."></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>CTA Button Text</label>
+                                <input type="text" name="cta_text" value="Sign Up Now">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary" style="margin-top:0.5rem; width:100%;">Save Popup Logic</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ══════════════════════════════════════
+     MODAL: Create Vendor
+══════════════════════════════════════ -->
+    <div id="createVendorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Vendor</h3>
+                <i data-lucide="x" class="close-modal" id="closeVendorModal"></i>
+            </div>
+            <form id="createVendorForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Brand Name</label>
+                    <input type="text" name="brand_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" name="phone_number">
+                </div>
+                <div class="form-group">
+                    <label>Vendor Logo / Icon</label>
+                    <input type="file" name="logo" accept="image/*">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Country</label>
+                        <input type="text" name="country" placeholder="e.g. Pakistan">
+                    </div>
+                    <div class="form-group">
+                        <label>State/Province</label>
+                        <input type="text" name="state" placeholder="e.g. Punjab">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" name="city" placeholder="e.g. Lahore">
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea name="address" rows="2"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="number" step="any" name="latitude" placeholder="e.g. 31.5497">
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="number" step="any" name="longitude" placeholder="e.g. 74.3436">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">
+                    Create &amp; Auto-Approve
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+     MODAL: Add Product on Behalf of Vendor
+══════════════════════════════════════ -->
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Product on Behalf of Vendor</h3>
+                <i data-lucide="x" class="close-modal" id="closeProductModal"></i>
+            </div>
+            <form id="addProductForm">
+                <!-- Vendor Selector -->
+                <div class="form-group">
+                    <label>Assign to Vendor <span style="color:#ef4444">*</span></label>
+                    <select id="product-vendor-select" name="vendor_id" required>
+                        <option value="">-- Select Vendor --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Product Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Category <span style="color:#ef4444">*</span></label>
+                    <select id="product-category-select" name="category" required>
+                        <option value="">-- Select Category --</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="product-subcategory-group" style="display:none;">
+                    <label>Subcategory <span style="color:#ef4444">*</span></label>
+                    <select id="product-subcategory-select" name="subcategory">
+                        <option value="">-- Select Subcategory --</option>
+                    </select>
+                    <small style="color:var(--text-secondary);font-size:0.78rem;">
+                        Select a subcategory if the selected category has child options.
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Product Type <span
+                            style="color:var(--text-secondary);font-size:0.8rem;">(optional)</span></label>
+                    <input type="text" name="product_type" placeholder="e.g. Electronics, Clothing">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Original Price <span style="color:#ef4444">*</span></label>
+                        <input type="number" step="0.01" name="original_price" required placeholder="100.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Discounted Price <span style="color:#ef4444">*</span></label>
+                        <input type="number" step="0.01" name="price" required placeholder="79.99">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Discount % <span style="color:#ef4444">*</span></label>
+                    <input type="number" step="0.01" name="discount" id="discount-pct" required placeholder="e.g. 20">
+                    <small style="color:var(--text-secondary);font-size:0.78rem;">
+                        Enter discount percentage (auto-fills when you set both prices)
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" rows="3" placeholder="Product description..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Image URLs <span style="color:var(--text-secondary);font-size:0.8rem;">(one per
+                            line)</span></label>
+                    <textarea name="images_raw" id="images-raw" rows="3"
+                        placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.jpg"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">
+                    Post Product
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+     MODAL: KYC Review
+══════════════════════════════════════ -->
+    <div id="kycModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>Vendor KYC Review</h3>
+                <i data-lucide="x" class="close-modal" id="closeKYCModal"></i>
+            </div>
+
+            <div class="kyc-details"
+                style="margin-top:1.5rem; display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                <div>
+                    <h4
+                        style="margin-bottom:0.8rem;color:var(--text-secondary);font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;">
+                        Business Profile</h4>
+                    <div
+                        style="background:rgba(255,255,255,0.03); padding:1rem; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                        <p style="margin-bottom:0.5rem;"><strong style="color:var(--text-secondary);">Brand
+                                Name:</strong> <span id="kyc-brand-name">Loading...</span></p>
+                        <p style="margin-bottom:0.5rem;"><strong style="color:var(--text-secondary);">Email:</strong>
+                            <span id="kyc-email">Loading...</span></p>
+                        <p style="margin-bottom:0.5rem;"><strong style="color:var(--text-secondary);">Phone:</strong>
+                            <span id="kyc-phone">Loading...</span></p>
+                        <p><strong style="color:var(--text-secondary);">Address:</strong> <span
+                                id="kyc-address">Loading...</span></p>
+                    </div>
+                </div>
+                <div>
+                    <h4
+                        style="margin-bottom:0.8rem;color:var(--text-secondary);font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;">
+                        Brand Logo</h4>
+                    <div
+                        style="background:rgba(255,255,255,0.03); padding:1rem; border-radius:8px; border:1px solid rgba(255,255,255,0.05); text-align:center; min-height: 120px; display: flex; align-items: center; justify-content: center;">
+                        <img id="kyc-logo-preview" src="" alt="Vendor Logo"
+                            style="max-width:100%; max-height:120px; border-radius:4px; display:none;">
+                        <p id="kyc-no-logo" style="color:var(--text-secondary); font-style:italic;">No logo provided</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:1.5rem;">
+                <label style="display:block; margin-bottom:0.5rem; color:var(--text-secondary);">Rejection Reason
+                    (required if rejecting)</label>
+                <textarea id="kyc-rejection-reason" rows="3"
+                    style="width:100%; padding:0.8rem; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;"
+                    placeholder="Enter reason for rejection..."></textarea>
+            </div>
+
+            <div class="modal-footer" style="margin-top:2rem; display:flex; gap:1rem; justify-content:flex-end;">
+                <button class="btn btn-danger" id="kyc-reject-btn"
+                    style="padding:0.6rem 1.2rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);">Reject
+                    Vendor</button>
+                <button class="btn btn-primary" id="kyc-approve-btn" style="padding:0.6rem 1.2rem;">Approve
+                    Vendor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+     MODAL: Create Category
+══════════════════════════════════════ -->
+    <div id="createCategoryModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>Create Default Category</h3>
+                <i data-lucide="x" class="close-modal" id="closeCategoryModal"></i>
+            </div>
+            <form id="createCategoryForm">
+                <div class="form-group">
+                    <label>Category Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" name="name" required placeholder="e.g. Electronics">
+                </div>
+                
+                <div id="subcategory-inputs-container">
+                    <label style="display:block; margin-bottom:0.4rem; color:var(--text-secondary); font-size:0.85rem;">
+                        Subcategories
+                    </label>
+                    <div class="subcategory-row" style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                        <input type="text" name="subcategories[]" placeholder="Subcategory name" style="flex:1;">
+                        <button type="button" class="btn btn-secondary remove-sub-btn" style="padding:0.4rem; display:none;">
+                            <i data-lucide="minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" id="add-sub-input-btn" style="width:100%; margin-bottom:1rem; font-size:0.8rem;">
+                    <i data-lucide="plus"></i> Add Another Subcategory
+                </button>
+
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">
+                    Create Category
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="createSubcategoryModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>Create Subcategory</h3>
+                <i data-lucide="x" class="close-modal" id="closeSubcategoryModal"></i>
+            </div>
+            <form id="createSubcategoryForm">
+                <div class="form-group">
+                    <label>Parent Category <span style="color:#ef4444">*</span></label>
+                    <select id="subcategory-category-select" name="category" required>
+                        <option value="">-- Select Category --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Subcategory Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" name="name" required placeholder="e.g. Smartphones">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">
+                    Create Subcategory
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Edit Vendor Modal ── -->
+    <div id="editVendorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Vendor</h2>
+                <button class="close-btn close-modal" id="closeEditVendorModal">&times;</button>
+            </div>
+            <form id="editVendorForm">
+                <input type="hidden" name="vendor_id">
+                <div class="form-group">
+                    <label>Brand Name</label>
+                    <input type="text" name="brand_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" name="phone">
+                </div>
+                <div class="form-group">
+                    <label>Business Address</label>
+                    <textarea name="business_address" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Edit Category Modal ── -->
+    <div id="editCategoryModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>Edit Category</h3>
+                <i data-lucide="x" class="close-modal" id="closeEditCategoryModal"></i>
+            </div>
+            <form id="editCategoryForm">
+                <input type="hidden" name="category_id">
+                <div class="form-group">
+                    <label>Category Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" name="name" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Update Category</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Edit Subcategory Modal ── -->
+    <div id="editSubcategoryModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>Edit Subcategory</h3>
+                <i data-lucide="x" class="close-modal" id="closeEditSubcategoryModal"></i>
+            </div>
+            <form id="editSubcategoryForm">
+                <input type="hidden" name="subcategory_id">
+                <div class="form-group">
+                    <label>Parent Category <span style="color:#ef4444">*</span></label>
+                    <select name="category" id="edit-subcategory-parent-select" required>
+                        <!-- Options filled via JS -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Subcategory Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" name="name" required>
+                </div>
+                <div style="display:flex; gap:1rem; margin-top:1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Save Changes</button>
+                    <button type="button" class="btn btn-secondary" id="deleteSubcategoryBtn" style="color:var(--danger); border-color:var(--danger);">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/admin_dashboard/js/admin.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>
